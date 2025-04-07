@@ -2,11 +2,72 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Microsoft Identity Python Web App: API</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Response Viewer - {{ title|escape }}</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/json-viewer/2.0.0/json-viewer.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        .json-container { max-height: 70vh; overflow: auto; }
+        .error-state { padding: 20px; margin: 15px 0; }
+    </style>
 </head>
 <body>
-    <a href="javascript:window.history.go(-1)">Back</a> <!-- Displayed on top of a potentially large JSON response, so it will remain visible -->
-    <h1>{{title}}</h1>
-    <pre>{{ result |tojson(indent=4) }}</pre> <!-- Just a generic json viewer -->
+    <header>
+        <button onclick="historyBack()">
+            <i class="fas fa-arrow-left"></i> Back
+        </button>
+        <h1>{{ title|escape }}</h1>
+    </header>
+
+    <div class="json-container" id="json-viewer"></div>
+
+    <!-- 正确使用json_script过滤器生成数据节点 -->
+    {{ result|json_script:"data" }}
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/json-viewer/2.0.0/json-viewer.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const config = {
+                hoverPreview: true,
+                theme: 'light',
+                collapseLevel: 2
+            };
+
+            const jsonElement = document.getElementById('data');
+            
+            if (jsonElement) {
+                try {
+                    const jsonData = JSON.parse(jsonElement.textContent);
+                    const viewer = new JSONViewer(config);
+                    
+                    viewer.showJSON(jsonData, -1, -1);
+                    document.getElementById('json-viewer').appendChild(
+                        viewer.getContainer()
+                    );
+                } catch (e) {
+                    console.error('JSON Parsing Failed:', e);
+                    showError('Data in Wrong Format');
+                }
+            } else {
+                showError('No data available');
+            }
+        });
+
+        function historyBack() {
+            window.history.back();
+        }
+
+        function showError(msg) {
+            const container = document.getElementById('json-viewer');
+            const safeMsg = msg.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+            container.innerHTML = `
+                <div class="error-state">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <h2>Data Error</h2>
+                    <p>${safeMsg}</p>
+                </div>
+            `;
+        }
+    </script>
 </body>
 </html>

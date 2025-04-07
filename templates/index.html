@@ -1,33 +1,55 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <title>{{ title }}</title>
-</head>
-<body>
-    <h1>{{ title }}</h1>
-    <h2>Welcome {{ user.get("name") }}!</h2>
+<!-- templates/index.html -->
+{% extends "base.html" %}
+{% load static %}
 
-    <!-- There is much hassle to get the local static image to show up on App Service.
-    https://learn.microsoft.com/en-us/azure/app-service/configure-language-python#serve-static-files-for-django-apps
-    For now, we will use a remote image.
-    -->
-    <img src="https://github.com/Azure-Samples/ms-identity-python-webapp-django/raw/main/static/topology.png" alt="Topology">
+{% block header %}
+    <h1>{{ title|escape }}</h1>
+    <h2>Welcome <span class="username">{{ user.name|default:"Guest"|escape }}</span>!</h2>
+{% endblock %}
 
-    <ul>
-    {% if api_endpoint %}
-      <li><a href='/call_api'>Call an API</a></li>
-    {% endif %}
+{% block content %}
+    <section class="dashboard">
+        <article class="main-content">
+            <img src="{% static 'images/topology.png' %}" 
+                 alt="System Topology" 
+                 class="responsive-img"
+                 loading="lazy">
+            
+            <div class="api-status">
+                {% if api_status %}
+                <p class="status-indicator online">API Service: Online</p>
+                {% else %}
+                <p class="status-indicator offline">API Service: Maintenance</p>
+                {% endif %}
+            </div>
+        </article>
 
-    {% if edit_profile_url %}
-      <li><a href='{{edit_profile_url}}'>Edit Profile</a></li>
-    {% endif %}
+        <aside class="user-info">
+            <div class="info-card">
+                <h3>User Profile</h3>
+                <ul>
+                    <li>Name: {{ user.name|default:"-"|escape }}</li>
+                    <li>Email: {{ user.email|default:"-"|escape }}</li>
+                    <li>Last login: {{ user.last_login|date:"Y-m-d H:i" }}</li>
+                </ul>
+            </div>
+        </aside>
+    </section>
+{% endblock %}
 
-    <li><a href="{{ url_for('identity.logout') }}">Logout</a></li>
-    </ul>
-
-    <hr>
-    <footer style="text-align: right">{{ title }}</footer>
-</body>
-</html>
-
+{% block scripts %}
+{{ block.super }}
+<script>
+// Dynamically update API status
+document.addEventListener('DOMContentLoaded', function() {
+    fetch('/api/healthcheck')
+        .then(response => response.json())
+        .then(data => {
+            const indicator = document.querySelector('.api-status .status-indicator');
+            indicator.classList.remove('online', 'offline');
+            indicator.classList.add(data.status ? 'online' : 'offline');
+            indicator.textContent = `API Service: ${data.status ? 'Online' : 'Maintenance'}`;
+        });
+});
+</script>
+{% endblock %}

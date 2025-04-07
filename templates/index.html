@@ -42,14 +42,36 @@
 <script>
 // Dynamically update API status
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('{% url "api_healthcheck" %}')
-        .then(response => response.json())
-        .then(data => {
-            const indicator = document.querySelector('.api-status .status-indicator');
-            indicator.classList.remove('online', 'offline');
-            indicator.classList.add(data.status ? 'online' : 'offline');
-            indicator.textContent = `API Service: ${data.status ? 'Online' : 'Maintenance'}`;
-        });
+    const getAccessToken = () => {
+        return sessionStorage.getItem('azureAccessToken'); // 从安全存储中获取令牌
+    };
+
+    const indicator = document.querySelector('.api-status .status-indicator');
+    indicator.textContent = 'Checking API status...';
+
+    // 修改后的 fetch 调用
+    fetch('{% url "api_healthcheck" %}', {
+        headers: {
+            'Authorization': `Bearer ${getAccessToken()}`,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => {
+        if (response.status === 401) { // 处理令牌过期
+            window.location.href = "{% url 'identity:login' %}";
+            return;
+        }
+        return response.json();
+    })
+    .then(data => {
+        indicator.classList.remove('online', 'offline');
+        indicator.classList.add(data.status ? 'online' : 'offline');
+        indicator.textContent = `API Service: ${data.status ? 'Online' : 'Maintenance'}`;
+    })
+    .catch(error => {
+        console.error('Healthcheck failed:', error);
+        indicator.textContent = 'Status: Unknown';
+    });
 });
 </script>
 {% endblock %}

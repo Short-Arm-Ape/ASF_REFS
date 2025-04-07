@@ -7,10 +7,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>{% block title %}{{ title|escape }}{% endblock %}</title>
     <link rel="stylesheet" href="{% static 'css/main.css' %}">
+    {% block extra_head %}{% endblock %}
 </head>
 <body>
     <header>
-        <h1>{% block header %}{{ title|escape }}{% endblock %}</h1>
+        {% block header %}
+        <h1>{{ title|escape }}</h1>
+        {% endblock %}
     </header>
 
     <nav class="main-nav">

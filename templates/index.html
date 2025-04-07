@@ -42,7 +42,7 @@
 <script>
 // Dynamically update API status
 document.addEventListener('DOMContentLoaded', function() {
-    fetch('/api/healthcheck')
+    fetch('{% url "api_healthcheck" %}')
         .then(response => response.json())
         .then(data => {
             const indicator = document.querySelector('.api-status .status-indicator');
